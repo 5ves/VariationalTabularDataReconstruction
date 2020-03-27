@@ -26,10 +26,10 @@ global ISW
 ISW = 0
 global ISQ
 ISQ = 0
-global N
-N = 0
-global M
-M = 0
+global I
+I = 0
+global J
+J = 0
 
 root = tk.Tk()
 errorLabel = tk.Label(root, width=30, height=10)
@@ -46,14 +46,14 @@ def Sw(u):
     return (1 + u**2 )**(1/2) + ISW
 
 def S(u):
-    global N
-    global M
+    global I
+    global J
     global F
     row = []
     row2 = []
     row4 = []
-    F[N-1, M-1] = ((1 + u[0]**2 * u[1]**2)**(1/2))
-    for k in range(M):
+    F[N-1, M-1] = ((1 + u[0]**2 + u[1]**2)**(1/2))
+    for k in range(J):
         if k % 2 == 0:
             row.append(2)
             row2.append(4)
@@ -72,7 +72,7 @@ def S(u):
 
     lMatrix = [[]]
 
-    for k in range(N):
+    for k in range(I):
         if k % 2 == 0:
             lMatrix.append(row4)
         else:
@@ -82,9 +82,9 @@ def S(u):
     lMatrix.pop()
     lMatrix.append(row)
     f = 0
-    for i in range(N):
-        for j in range(M):
-            f = lMatrix[i, j] * F[i, j]
+    for i in range(I):
+        for j in range(J):
+            f = f + (lMatrix[i, j] * F[i, j])
 
     return (1/9) * f
 
@@ -182,10 +182,10 @@ global F
 F = 0 * Z
 for i in range(1, N-1):
     for j in range(1, N-1):
-        N = i + 1
-        M = j + 1
-        q = U[0,0]/2
-        w = U[0,0]/2
+        I = i + 1
+        J = j + 1
+        q = U[0,0]
+        w = U[0,0]
         for k in range(i):
             q = q + Q[k, j]
         for k in range(j):
@@ -196,17 +196,15 @@ for i in range(1, N-1):
                'fun': lambda x: -abs((1/2)*(q + w + U[i, 0] + U[0, j] + x[0] + x[1]) - a) + error}
         res = minimize(S, x0 = (IG, IG), constraints=con, method=m)
         while res.success == False:
-            print(" ResMain === " + res.message)
+            print(" ResMain :: " + res.message)
             res = minimize(S, x0 = (IG, IG), constraints=con, method=m)
-        qlim = 0
-        wlim = 0
         if res.x[0] < eps:
             res.x[0] = 0.0
         if res.x[1] < eps:
             res.x[1] = 0.0
         Q[i, j] = res.x[0]
         W[i, j] = res.x[1]
-        U[i, j] = q/2 + res.x[0]/2 + w/2 + res.x[1]/2 + U[i, 0] + U[0, j]
+        U[i, j] = (1/2)*(q + w + U[i, 0] + U[0, j] + res.x[0] + res.x[1]) #q/2 + res.x[0]/2 + w/2 + res.x[1]/2 + U[i, 0] + U[0, j]
 
 ax2 = plt.subplot(1, 3, 3, projection='3d')
 #UI = griddata((X, Y), U, (X, Y), method='cubic')
@@ -216,4 +214,5 @@ ax2.plot_surface(X, Y, U, cmap='Spectral', antialiased=True, linewidth=0)
 #ax2.set_xlabel('X Label')
 
 plt.show()
-"""
+
+
