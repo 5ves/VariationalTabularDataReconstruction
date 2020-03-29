@@ -1,39 +1,23 @@
-N = 15
-M = 15
+from tkinter import *
+from tkinter.ttk import *
 
-row = []
-row2 = []
-row4 = []
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-for k in range(M):
-    if k % 2 == 0:
-        row.append(2)
-        row2.append(4)
-        row4.append(8)
-    else:
-        row.append(4)
-        row2.append(8)
-        row4.append(16)
+root = Tk()
 
-row[0] = 1
-row[-1] = 1
-row2[0] = 2
-row2[-1] = 2
-row4[0] = 4
-row4[-1] = 4
+figure = Figure(figsize=(5, 4), dpi=100)
+plot = figure.add_subplot(1, 1, 1)
 
-print(row)
-print("===================")
-lMatrix = [[]]
-for k in range(N):
-    if k % 2 == 0:
-        lMatrix.append(row4)
-    else:
-        lMatrix.append(row2)
-lMatrix.pop(0)
-lMatrix.insert(0, row)
-lMatrix.pop()
-lMatrix.append(row)
+plot.plot(0.5, 0.3, color="red", marker="o", linestyle="")
 
-for r in lMatrix:
-    print(r)
+x = [ 0.1, 0.2, 0.3 ]
+y = [ -0.1, -0.2, -0.3 ]
+plot.plot(x, y, color="blue", marker="x", linestyle="")
+
+canvas = FigureCanvasTkAgg(figure, root)
+canvas.get_tk_widget().grid(row=0, column=0)
+
+root.mainloop()

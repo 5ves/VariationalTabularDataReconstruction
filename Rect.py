@@ -52,7 +52,8 @@ def S(u):
     row = []
     row2 = []
     row4 = []
-    F[N-1, M-1] = ((1 + u[0]**2 + u[1]**2)**(1/2))
+    F[I-1, J-1] = ((1 + u[0]**2 + u[1]**2)**(1/2))
+    print(u)
     for k in range(J):
         if k % 2 == 0:
             row.append(2)
@@ -84,7 +85,7 @@ def S(u):
     f = 0
     for i in range(I):
         for j in range(J):
-            f = f + (lMatrix[i, j] * F[i, j])
+            f = f + (lMatrix[i][j] * F[i][j])
 
     return (1/9) * f
 
@@ -133,13 +134,14 @@ W = np.empty([N-1, N-1], float)
 U[0, 0] = 0  # U00
 sq = U[0, 0]
 sw = U[0, 0]
-IG = Z.max() - Z.min()  # first step for minimization. needed max size of surface
+IG = 0
+#IG = Z.max() - Z.min()  # first step for minimization. needed max size of surface
 
-moreButton.config(command=AddError)
-lessButton.config(command=SubtractError)
-errorLabel.pack()
-moreButton.pack()
-lessButton.pack()
+#moreButton.config(command=AddError)
+#lessButton.config(command=SubtractError)
+#errorLabel.pack()
+#moreButton.pack()
+#lessButton.pack()
 #root.title("Моя первая графическая программа на Python")
 #root.geometry("400x250")
 #root.resizable(width=False, height=False)
@@ -151,24 +153,26 @@ lessButton.pack()
 for i in range(N-1):
     aq = Z[i, 0]
     aw = Z[0, i]
-    conq = {'type': 'ineq', 'fun': lambda x: -(abs(sq + x - aq) + error)}
-    conw = {'type': 'ineq', 'fun': lambda x: -(abs(sw + x - aw) + error)}
+    conq = {'type': 'ineq', 'fun': lambda x: error - abs(sq + x - aq)}
+    conw = {'type': 'ineq', 'fun': lambda x: error - abs(sw + x - aw)}
     resq = minimize(Sq, x0 = IG, constraints=conq, method=m)
     while resq.success == False:
         print("ResQ :: " + resq.message)
+        print(resq.nit)
         resq = minimize(Sq, x0 = IG, constraints=conq, method=m)
-
+    print(resq.nit)
     resw = minimize(Sw, x0 = IG, constraints=conw, method=m)
     while resw.success == False:
         print("ResW :: " + resw.message)
+        print(resw.nit)
         resw = minimize(Sw, x0 = IG, constraints=conw, method=m)
-
+    print(resw.nit)
     if resq.x < eps:
         resq.x = 0
     if resw.x < eps:
         resw.x = 0
     ISW = ISW + (1 + resw.x ** 2) ** (1 / 2)
-    ISQ = ISQ + (1 + resq.x**2 )**(1/2)
+    ISQ = ISQ + (1 + resq.x ** 2) ** (1 / 2)
     Q[i, 0] = resq.x
     W[0, i] = resw.x
     U[i, 0] = sq + resq.x
@@ -191,13 +195,14 @@ for i in range(1, N-1):
         for k in range(j):
             w = w + W[i, k]
         a = Z[i, j]
-        #con = {'type': 'ineq', 'fun': lambda x: -(abs(q + x[0]/2 + w + x[1]/2 + U[i, 0] + U[0, j] - 2*a) - 2*error)}
         con = {'type': 'ineq',
                'fun': lambda x: -abs((1/2)*(q + w + U[i, 0] + U[0, j] + x[0] + x[1]) - a) + error}
         res = minimize(S, x0 = (IG, IG), constraints=con, method=m)
         while res.success == False:
             print(" ResMain :: " + res.message)
+            print(res.nit)
             res = minimize(S, x0 = (IG, IG), constraints=con, method=m)
+        print(res.nit)
         if res.x[0] < eps:
             res.x[0] = 0.0
         if res.x[1] < eps:
