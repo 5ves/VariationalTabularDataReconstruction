@@ -1,3 +1,7 @@
+#
+#   Версия приложения от 04.04.2020
+#   Здесь не работает восстановление А. Начаты работы по выправлению формул для разрывных функций.
+#   В след версии хочу убрать в интегрированиях сумммирование с пред значениями.
 
 from mpl_toolkits import mplot3d
 from scipy.optimize import *
@@ -18,58 +22,52 @@ from matplotlib.backend_bases import key_press_handler
 
 print("You are using Python {}.{}.".format(sys.version_info.major, sys.version_info.minor))
 
-global F, error, I, J, Tries, Z, cmapInd, ColorMap, U, O
+global F, ISQ, ISW, error, I, J, Tries, Z
 F = 0
 error = 4.0
+ISW = 0
+ISQ = 0
 I = 0
 J = 0
 Tries = 100
-
-cmapArr = ['Spectral', 'Spectral_r', 'Accent', 'Accent_r', 'Blues', 'Blues_r', 'BrBG', 'BrBG_r', 'BuGn', 'BuGn_r', 'BuPu', 'BuPu_r', 'CMRmap', 'CMRmap_r', 'Dark2', 'Dark2_r', 'GnBu', 'GnBu_r', 'Greens', 'Greens_r', 'Greys', 'Greys_r', 'OrRd', 'OrRd_r', 'Oranges', 'Oranges_r', 'PRGn', 'PRGn_r', 'Paired', 'Paired_r', 'Pastel1', 'Pastel1_r', 'Pastel2', 'Pastel2_r', 'PiYG', 'PiYG_r', 'PuBu', 'PuBuGn', 'PuBuGn_r', 'PuBu_r', 'PuOr', 'PuOr_r', 'PuRd', 'PuRd_r', 'Purples', 'Purples_r', 'RdBu', 'RdBu_r', 'RdGy', 'RdGy_r', 'RdPu', 'RdPu_r', 'RdYlBu', 'RdYlBu_r', 'RdYlGn', 'RdYlGn_r', 'Reds', 'Reds_r', 'Set1', 'Set1_r', 'Set2', 'Set2_r', 'Set3', 'Set3_r', 'Wistia', 'Wistia_r', 'YlGn', 'YlGnBu', 'YlGnBu_r', 'YlGn_r', 'YlOrBr', 'YlOrBr_r', 'YlOrRd', 'YlOrRd_r', 'afmhot', 'afmhot_r', 'autumn', 'autumn_r', 'binary', 'binary_r', 'bone', 'bone_r', 'brg', 'brg_r', 'bwr', 'bwr_r', 'cividis', 'cividis_r', 'cool', 'cool_r', 'coolwarm', 'coolwarm_r', 'copper', 'copper_r', 'cubehelix', 'cubehelix_r', 'flag', 'flag_r', 'gist_earth', 'gist_earth_r', 'gist_gray', 'gist_gray_r', 'gist_heat', 'gist_heat_r', 'gist_ncar', 'gist_ncar_r', 'gist_rainbow', 'gist_rainbow_r', 'gist_stern', 'gist_stern_r', 'gist_yarg', 'gist_yarg_r', 'gnuplot', 'gnuplot2', 'gnuplot2_r', 'gnuplot_r', 'gray', 'gray_r', 'hot', 'hot_r', 'hsv', 'hsv_r', 'inferno', 'inferno_r', 'jet', 'jet_r', 'magma', 'magma_r', 'nipy_spectral', 'nipy_spectral_r', 'ocean', 'ocean_r', 'pink', 'pink_r', 'plasma', 'plasma_r', 'prism', 'prism_r', 'rainbow', 'rainbow_r', 'seismic', 'seismic_r', 'spring', 'spring_r', 'summer', 'summer_r', 'tab10', 'tab10_r', 'tab20', 'tab20_r', 'tab20b', 'tab20b_r', 'tab20c', 'tab20c_r', 'terrain', 'terrain_r', 'twilight', 'twilight_r', 'twilight_shifted', 'twilight_shifted_r', 'viridis', 'viridis_r', 'winter', 'winter_r']
-cmapInd = 0
 
 hButton = 2
 wButton = 5
 hInfo = 3
 wInfo = 6
 
-m = 'COBYLA'  # 'SLSQP' #'COBYLA' # minimization method
-ColorMap = cmapArr[cmapInd] # 'Spectral'
+m = 'SLSQP'  # 'SLSQP' #'COBYLA' # minimization method
 eps = 0.01  # epsilon
 lVal = 5  # значение буквы
 N = 20  # grid size
 IG = 0
-Tools = tk.Tk()
-recoveryRatio = tk.StringVar()
+root = tk.Tk()
 NewNoise = tk.BooleanVar() # new noise control variable
 NewNoise.set(1)
 ForceBuild = tk.BooleanVar() #force build conttrol variable
 ForceBuild.set(1)
-postProcessing = tk.BooleanVar() #force build conttrol variable
-postProcessing.set(1)
 Z = np.zeros((N - 1, N - 1))
 
+
 #errorLabel = tk.Label(root, width=wInfo, height=hInfo)
-errorEntry = tk.Entry(Tools)
-moreButton = tk.Button(Tools, text="+ 0.1", width=wButton, height=hButton)
-lessButton = tk.Button(Tools, text="- 0.1", width=wButton, height=hButton)
-retryButton = tk.Button(Tools, text="Retry", width=wButton, height=hButton)
-colorChangeButton = tk.Button(Tools, text="Change color", width=wButton+10, height=hButton)
-colorResetButton = tk.Button(Tools, text="Reset color", width=wButton+10, height=hButton)
-postProcessingButton = tk.Checkbutton(text="Post processing", variable=postProcessing, onvalue=1, offvalue=0)
+errorEntry = tk.Entry(root)
+moreButton = tk.Button(root, text="+ 0.1", width=wButton, height=hButton)
+lessButton = tk.Button(root, text="- 0.1", width=wButton, height=hButton)
+retryButton = tk.Button(root, text="Retry", width=wButton, height=hButton)
 randomButton = tk.Checkbutton(text="New noise", variable=NewNoise, onvalue=1, offvalue=0)
 forceBuildButton = tk.Checkbutton(text="Force build", variable=ForceBuild, onvalue=1, offvalue=0)
-recoveryRatioLabel = tk.Label(Tools, textvariable=recoveryRatio)
 #errorLabel['text'] = str(error)
-PlotsFig = plt.figure(dpi=70)
+fig = plt.figure(dpi=70)
 
 def Sq(u):
     global ISQ
-    return (1 + u ** 2) ** (1 / 2)
+    return (1 + u ** 2) ** (1 / 2) + ISQ
+
 
 def Sw(u):
     global ISW
-    return (1 + u ** 2) ** (1 / 2)
+    return (1 + u ** 2) ** (1 / 2) + ISW
+
 
 def S(u):
     global I
@@ -110,8 +108,9 @@ def S(u):
     f = 0
     for i in range(I):
         for j in range(J):
-            f = (lMatrix[i][j] * F[i][j]) #+ f
+            f = f + (lMatrix[i][j] * F[i][j])
     return (1 / 9) * f
+
 
 def AddError():
     global error
@@ -121,6 +120,7 @@ def AddError():
     #errorLabel['text'] = error
     Run()
 
+
 def SubtractError():
     global error
     error = round(error - 0.1, 1)
@@ -129,21 +129,6 @@ def SubtractError():
     errorEntry.insert(0, error)
     Run()
 
-def NextColorPaint():
-    global cmapInd, ColorMap
-    if cmapInd == len(cmapArr) - 1:
-        cmapInd = 0
-        ColorMap = cmapArr[cmapInd]
-    else:
-        cmapInd += 1
-        ColorMap = cmapArr[cmapInd]
-    Run(OnlyPaint=True)
-
-def ResetColor():
-    global cmapInd, ColorMap
-    cmapInd = 0
-    ColorMap = cmapArr[cmapInd]
-    Run(OnlyPaint=True)
 
 def errorEntryValueChanged(event):
     global error
@@ -152,13 +137,14 @@ def errorEntryValueChanged(event):
     errorEntry.insert(0, error)
     Run()
 
+
 def Retry():
     Run()
 
 def FillOrigin():  # fill letter
-    return FillOriginDK() #  <-- required letter filling method here
+    return FillOriginA()
 
-def FillOriginN():  # N
+def FillOriginN():  # fill letter
     Z = np.zeros((N - 1, N - 1))
     for i in range(4, N - 4):
         Z[i, 4] = lVal
@@ -167,7 +153,8 @@ def FillOriginN():  # N
             Z[i, i] = lVal
     return Z
 
-def FillOriginA():  # fill letter A
+
+def FillOriginA():  # fill letter
     Z = np.zeros((N - 1, N - 1))
     j = int(N/2 - 1)
     cnt = 0
@@ -182,56 +169,13 @@ def FillOriginA():  # fill letter A
         j = j -1
     return Z
 
-def FillOriginW():  # bounds test W
-    Z = np.zeros((N - 1, N - 1))
-    j = int(N/2 - 1)
-    cnt = 0
-    for i in range(0, N-1):
-        Z[i, 0] = lVal
-        Z[i, -1] = lVal
-        if i > 9:
-            Z[i, j] = lVal
-            Z[i, j + 2*cnt] = lVal
-            cnt = cnt + 1
-            j = j - 1
-    return Z
-
-def FillOriginDK():  # D K
-    Z = np.zeros((N - 1, N - 1))
-    j = int(N/2 - 1)
-    cnt = 0
-    for i in range(4, N-4):
-        Z[i, 0] = lVal
-        Z[i, int(N/2 + 1)] = lVal
-        if cnt == 0:
-            for j in range(1, int(N/4)+1):
-                Z[i, j] = lVal
-            j = int(N/4)
-        elif cnt <= 3:
-            Z[i, j + cnt] = lVal
-        else:
-            Z[i, j + 3] = lVal
-        Z[i, int(N/2 + 1) + 6 - cnt] = lVal
-        if i > 9:
-            cnt = cnt - 1
-        elif i < 9:
-            cnt = cnt + 1
-    return Z
-
 def AddNoise(Z):
     for z in Z:
         for i in range(len(z)):
             if z[i] == 0:
-                z[i] = random.uniform(2, 4.9)
+                z[i] = random.randint(2, 4)
     return Z
 
-def RecoveryRatioCalculation():
-    global O, U
-    ratio = 0
-    for i in range(N - 1):
-        for j in range(N - 1):
-            ratio = ratio + abs(U[i, j] - O[i, j])
-    recoveryRatio.set(str(ratio))
 
 def RestorationRun(N, Z, e):
     global F, ISQ, ISW, error, I, J, Tries
@@ -268,7 +212,7 @@ def RestorationRun(N, Z, e):
         while resw.success == False:
 
             print("ResW (" + str(i) + " : " + str(tryCount) + ") :: " + resw.message)
-            print("Resw Iterations == " + str(resw.nit) + " in " + str(0) + " " + str(i))
+            #print("Resw Iterations == " + str(resw.nit) + " in " + str(0) + " " + str(i))
             #print("Tries count == " + str(tryCount))
 
             tryCount = tryCount + 1
@@ -284,14 +228,17 @@ def RestorationRun(N, Z, e):
         if resw.x < e:
             resw.x = 0
 
-        # if resq.x > 0 or resw.x > 0:
-            # print("q: " + str(resq.x) + " w: " + str(resw.x) +" i: " + str(i))
+        if resq.x > 0 or resw.x > 0:
+            print("jopa")
 
+        ISW = ISW + (1 + resw.x ** 2) ** (1 / 2)
+        ISQ = ISQ + (1 + resq.x ** 2) ** (1 / 2)
         Q[i, 0] = resq.x
         W[0, i] = resw.x
-
-        U[i, 0] = resq.x
-        U[0, i] = resw.x
+        U[i, 0] = resq.x + sq
+        U[0, i] = resw.x + sw
+        sq = sq + resq.x
+        sw = sw + resw.x
         # print(res.x)
     # filling non-boundary main grid surface
     F = 0 * Z
@@ -300,10 +247,15 @@ def RestorationRun(N, Z, e):
         for j in range(1, N - 1):
             I = i + 1
             J = j + 1
-
+            q = U[0, 0]
+            w = U[0, 0]
+            for k in range(i):
+                q = q + Q[k, j]
+            for k in range(j):
+                w = w + W[i, k]
             a = Z[i, j]
             con = {'type': 'ineq',
-                   'fun': lambda x: -abs((1 / 2) * (x[0] + x[1]) - a) + error}
+                   'fun': lambda x: -abs((1 / 2) * (q + w + U[i, 0] + U[0, j] + x[0] + x[1]) - a) + error}
             res = minimize(S, x0=(IG, IG), constraints=con, method=m, options={'maxiter': Tries})
             tryCount = 1
             while res.success == False:
@@ -325,70 +277,73 @@ def RestorationRun(N, Z, e):
                 res.x[0] = 0.0
             if res.x[1] < eps:
                 res.x[1] = 0.0
-
-            # if res.x[0] > 0 or res.x[1] > 0:
-                # print("q: " + str(res.x[0]) + " w: " + str(res.x[1]) + "  (" + str(i) + ", "+str(j)+")")
-
             Q[i, j] = res.x[0]
             W[i, j] = res.x[1]
-            U[i, j] = (1 / 2) * (res.x[0] + res.x[1])
+            U[i, j] = (1 / 2) * (q + w + U[i, 0] + U[0, j] + res.x[0] + res.x[1])
+            #errorEntry['bg'] = 'white'
+            # q/2 + res.x[0]/2 + w/2 + res.x[1]/2 + U[i, 0] + U[0, j]
     print(error)
     return U
 
-def Run(OnlyPaint = False):
-    global Z, U, O
-    Tools['bg'] = 'white'
-    PlotsFig.clf()
+
+def Run():
+    global Z
+    root['bg'] = 'white'
+    #errorEntry['bg'] = 'white'
     X, Y = np.meshgrid(np.linspace(0, N, N - 1), np.linspace(0, N, N - 1))  # x y grids
-    if not OnlyPaint:
-        O = FillOrigin()
-        if NewNoise.get() == 1:
-            Z = AddNoise(O.copy())
-        U = RestorationRun(N, Z, eps)
-        if postProcessing.get() == 1:
-            for i in range(N - 1):
-                for j in range(N - 1):
-                    if U[i, j] > 0:
-                        U[i, j] = U[i, j] + error
-                        # print("(" + str(i) + ", " + str(j) + ")")
-    RecoveryRatioCalculation()
+    O = FillOrigin()
+    if NewNoise.get() == 1:
+        Z = AddNoise(O.copy())
+    U = RestorationRun(N, Z, eps)
+    fig.clf()
     ax1 = plt.subplot(1, 3, 1, projection='3d')
-    ax1.plot_surface(X, Y, O, cmap=ColorMap)
+    ax1.plot_surface(X, Y, O, cmap='Spectral')
     ax2 = plt.subplot(1, 3, 2, projection='3d')
-    ax2.plot_surface(X, Y, Z, cmap=ColorMap)
+    ax2.plot_surface(X, Y, Z, cmap='Spectral')
     if len(U) > 1:
         ax3 = plt.subplot(1, 3, 3, projection='3d')
-        ax3.plot_surface(X, Y, U, cmap=ColorMap)
+        ax3.plot_surface(X, Y, U, cmap='Spectral')
     else:
         if ForceBuild.get() == 1:
             Run()
         else:
-            Tools['bg'] = 'red'
-    Tools.mainloop()
+            root['bg'] = 'red'
+    root.mainloop()
 
 
-Tools.title("DATASURFACE")
-Tools.geometry("300x350")
-Tools.resizable(width=True, height=True)
+
+root.title("DATASURFACE")
+root.geometry("200x150")
+root.resizable(width=True, height=True)
 moreButton.config(command=AddError)
 lessButton.config(command=SubtractError)
 retryButton.config(command=Retry)
-colorChangeButton.config(command=NextColorPaint)
-colorResetButton.config(command=ResetColor)
 errorEntry.bind("<Return>", errorEntryValueChanged)
 
 errorEntry.pack()
 retryButton.pack()
-colorChangeButton.pack()
-colorResetButton.pack()
-postProcessingButton.pack()
 randomButton.pack()
 forceBuildButton.pack()
 moreButton.pack()
 lessButton.pack()
-recoveryRatioLabel.pack()
 
 errorEntry.delete(0, tk.END)
 errorEntry.insert(0, error)
 
 Run()
+#NewNoise.set(0)
+# canvas = FigureCanvasTkAgg(fig, root)
+# toolbar = NavigationToolbar2Tk(canvas, root)
+# toolbar.update()
+#
+# def on_key_press(event):
+#     print("you pressed {}".format(event.key))
+#     key_press_handler(event, canvas, toolbar)
+#
+# canvas.mpl_connect("key_press_event", on_key_press)
+# canvas.get_tk_widget().pack(side="top",fill='both',expand=True)
+# X = np.linspace(0, N, N-1)
+# Y = np.linspace(0, N, N-1)
+#ax3 = fig.add_subplot(1, 3, 1, projection='3d')
+#ax1 = fig.add_subplot(1, 3, 2, projection='3d')
+#ax2 = fig.add_subplot(1, 3, 3, projection='3d')

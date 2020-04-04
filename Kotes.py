@@ -38,7 +38,7 @@ N = 20  # grid size
 IG = 20
 root = tk.Tk()
 Random = tk.BooleanVar()
-Random.set(0)
+Random.set(1)
 Z = np.zeros((N - 1, N - 1))
 
 
@@ -165,8 +165,8 @@ def RestorationRun(N, Z, e):
     for i in range(N - 1):
         aq = Z[i, 0]
         aw = Z[0, i]
-        conq = {'type': 'ineq', 'fun': lambda x: error - abs(sq + x/2 - aq)}
-        conw = {'type': 'ineq', 'fun': lambda x: error - abs(sw + x/2 - aw)}
+        conq = {'type': 'ineq', 'fun': lambda x: error - abs(sq + x - aq)}
+        conw = {'type': 'ineq', 'fun': lambda x: error - abs(sw + x - aw)}
         resq = minimize(Sq, x0=IG, constraints=conq, method=m, options={'maxiter': Tries})
         tryCount = 0
 
@@ -208,29 +208,34 @@ def RestorationRun(N, Z, e):
         ISQ = ISQ + (1 + resq.x ** 2) ** (1 / 2)
         Q[i, 0] = resq.x
         W[0, i] = resw.x
-        U[i, 0] = sq + resq.x/2
-        U[0, i] = sw + resw.x/2
+        U[i, 0] = sq + resq.x
+        U[0, i] = sw + resw.x
         sq = sq + resq.x
         sw = sw + resw.x
         # print(res.x)
-    # filling non-boundary main grid surface
-    F = 0 * Z
-
+    F = 0 * Z # filling non-boundary main grid surface
+    print(U)
     for i in range(1, N - 1):
         for j in range(1, N - 1):
             I = i + 1
             J = j + 1
             q = U[0, 0]
             w = U[0, 0]
-            q = q + Q[0, j]/2
-            w = w + W[i, 0]/2
+            q = q + Q[0, j]
+            w = w + W[i, 0]
             for k in range(1, i):
-                q = q + Q[k, j]
+                if k % 2 == 0:
+                    q = q + (2 * Q[k, j])
+                elif k % 2 == 1:
+                    q = q + (4 * Q[k, j])
             for k in range(1, j):
-                w = w + W[i, k]
+                if k % 2 == 0:
+                    w = w + (2 * W[i, k])
+                elif k % 2 == 1:
+                    w = w + (4 * W[i, k])
             a = Z[i, j]
             con = {'type': 'ineq',
-                   'fun': lambda x: -abs((1 / 2) * (q + w + U[i, 0] + U[0, j] + x[0]/2 + x[1]/2) - a) + error}
+                   'fun': lambda x: -abs((1 / 3) * (q + w + U[i, 0] + U[0, j] + x[0] + x[1]) - a) + error}
             res = minimize(S, x0=(IG, IG), constraints=con, method=m, options={'maxiter': Tries})
             tryCount = 1
             while res.success == False:
@@ -255,7 +260,7 @@ def RestorationRun(N, Z, e):
 
             Q[i, j] = res.x[0]
             W[i, j] = res.x[1]
-            U[i, j] = (1 / 2) * (q + w + U[i, 0] + U[0, j] + res.x[0]/2 + res.x[1]/2)
+            U[i, j] = (1 / 3) * (q + w + U[i, 0] + U[0, j] + res.x[0] + res.x[1])
             #errorEntry['bg'] = 'white'
             # q/2 + res.x[0]/2 + w/2 + res.x[1]/2 + U[i, 0] + U[0, j]
     print(error)
@@ -282,8 +287,6 @@ def Run():
     else:
         root['bg'] = 'red'
     root.mainloop()
-
-
 
 root.title("DATASURFACE")
 root.geometry("200x150")

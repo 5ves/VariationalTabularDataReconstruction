@@ -35,6 +35,7 @@ root = tk.Tk()
 errorLabel = tk.Label(root, width=30, height=10)
 moreButton = tk.Button(root, text="+ 0.1", width=30, height=10)
 lessButton = tk.Button(root, text="- 0.1", width=30, height=10)
+
 errorLabel['text'] = str(error)
 
 def Sq(u):
