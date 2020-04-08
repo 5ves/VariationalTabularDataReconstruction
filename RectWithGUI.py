@@ -17,10 +17,13 @@ from matplotlib.backends.backend_tkagg import (
 from matplotlib.backend_bases import key_press_handler
 
 print("You are using Python {}.{}.".format(sys.version_info.major, sys.version_info.minor))
-
-global F, error, I, J, Tries, Z, cmapInd, ColorMap, U, O
+lVal = 5  # значение буквы
+global F, error, I, J, Tries, Z, cmapInd, ColorMap, U, O, Bottom, Top
+Bottom = 2
+Top = random.uniform(Bottom, lVal-0.01)#4.99
+print("Noise lvl = " + str(Top))
 F = 0
-error = 4.0
+error = 4.86
 I = 0
 J = 0
 Tries = 100
@@ -36,9 +39,10 @@ wInfo = 6
 m = 'COBYLA'  # 'SLSQP' #'COBYLA' # minimization method
 ColorMap = cmapArr[cmapInd] # 'Spectral'
 eps = 0.01  # epsilon
-lVal = 5  # значение буквы
 N = 20  # grid size
 IG = 0
+Azim = -90
+Elev = 90
 Tools = tk.Tk()
 recoveryRatio = tk.StringVar()
 NewNoise = tk.BooleanVar() # new noise control variable
@@ -47,10 +51,13 @@ ForceBuild = tk.BooleanVar() #force build conttrol variable
 ForceBuild.set(1)
 postProcessing = tk.BooleanVar() #force build conttrol variable
 postProcessing.set(1)
+randNoise = tk.BooleanVar() #force build conttrol variable
+randNoise.set(1)
 Z = np.zeros((N - 1, N - 1))
 
 #errorLabel = tk.Label(root, width=wInfo, height=hInfo)
 errorEntry = tk.Entry(Tools)
+errlvlLabel = tk.Label(text="Error lvl")
 moreButton = tk.Button(Tools, text="+ 0.1", width=wButton, height=hButton)
 lessButton = tk.Button(Tools, text="- 0.1", width=wButton, height=hButton)
 retryButton = tk.Button(Tools, text="Retry", width=wButton, height=hButton)
@@ -59,16 +66,44 @@ colorResetButton = tk.Button(Tools, text="Reset color", width=wButton+10, height
 postProcessingButton = tk.Checkbutton(text="Post processing", variable=postProcessing, onvalue=1, offvalue=0)
 randomButton = tk.Checkbutton(text="New noise", variable=NewNoise, onvalue=1, offvalue=0)
 forceBuildButton = tk.Checkbutton(text="Force build", variable=ForceBuild, onvalue=1, offvalue=0)
+
+def RandomNoiseClick():
+    if randNoise.get() == 0:
+        noiseEntry.config(state="normal") # readonly
+        noiseEntry.config(background="white")
+    else:
+        noiseEntry.delete(0, tk.END)
+        noiseEntry.config(background="grey")
+        noiseEntry.config(state="disabled")
+
+randNoiseButton = tk.Checkbutton(text="Randomize noise", variable=randNoise, onvalue=1, offvalue=0, command=RandomNoiseClick)
+noiseEntry = tk.Entry(Tools)
+noiseLabel = tk.Label(text="Noise lvl =")
+
 recoveryRatioLabel = tk.Label(Tools, textvariable=recoveryRatio)
 #errorLabel['text'] = str(error)
-PlotsFig = plt.figure(dpi=70)
+PlotsFig = plt.figure(dpi=70, num="PLOTS")
+
+# filling UI
+errlvlLabel.grid(row=1,column=1)
+errorEntry.grid(row=1,column=2)
+moreButton.grid(row=2,column=1)
+lessButton.grid(row=2,column=2)
+retryButton.grid(row=3, column=1)
+colorChangeButton.grid(row=4,column=1)
+colorResetButton.grid(row=4,column=2)
+postProcessingButton.grid(row=5,column=1)
+randomButton.grid(row=5,column=2)
+forceBuildButton.grid(row=6,column=1)
+randNoiseButton.grid(row=6,column=2)
+noiseLabel.grid(row=7,column=1)
+noiseEntry.grid(row=7,column=2)
+
 
 def Sq(u):
-    global ISQ
     return (1 + u ** 2) ** (1 / 2)
 
 def Sw(u):
-    global ISW
     return (1 + u ** 2) ** (1 / 2)
 
 def S(u):
@@ -108,14 +143,15 @@ def S(u):
     lMatrix.pop()
     lMatrix.append(row)
     f = 0
-    for i in range(I):
-        for j in range(J):
-            f = (lMatrix[i][j] * F[i][j]) #+ f
-    return (1 / 9) * f
+    # for i in range(I):
+        # for j in range(J):
+            # f = (lMatrix[i][j] * F[i][j]) #+ f
+
+    return (1 / 9) * (lMatrix[I-1][J-1] * F[I-1][J-1])
 
 def AddError():
     global error
-    error = round(error + 0.1, 1)
+    error = round(error + 0.1, 2)
     errorEntry.delete(0, tk.END)
     errorEntry.insert(0, error)
     #errorLabel['text'] = error
@@ -123,7 +159,7 @@ def AddError():
 
 def SubtractError():
     global error
-    error = round(error - 0.1, 1)
+    error = round(error - 0.1, 2)
     #errorLabel['text'] = error
     errorEntry.delete(0, tk.END)
     errorEntry.insert(0, error)
@@ -145,9 +181,15 @@ def ResetColor():
     ColorMap = cmapArr[cmapInd]
     Run(OnlyPaint=True)
 
+def RandomNoiseClick():
+    if randNoise.get() == 0:
+        noiseEntry.delete(0, tk.END)
+        noiseEntry.config(state=NORMAL)
+
+
 def errorEntryValueChanged(event):
     global error
-    error = round(eval(errorEntry.get()), 1)
+    error = round(eval(errorEntry.get()), 2)
     errorEntry.delete(0, tk.END)
     errorEntry.insert(0, error)
     Run()
@@ -156,7 +198,7 @@ def Retry():
     Run()
 
 def FillOrigin():  # fill letter
-    return FillOriginDK() #  <-- required letter filling method here
+    return FillOriginN() #  <-- required letter filling method here
 
 def FillOriginN():  # N
     Z = np.zeros((N - 1, N - 1))
@@ -219,10 +261,11 @@ def FillOriginDK():  # D K
     return Z
 
 def AddNoise(Z):
+    global Bottom, Top
     for z in Z:
         for i in range(len(z)):
             if z[i] == 0:
-                z[i] = random.uniform(2, 4.9)
+                z[i] += random.uniform(Bottom, Top)
     return Z
 
 def RecoveryRatioCalculation():
@@ -241,6 +284,8 @@ def RestorationRun(N, Z, e):
     U[0, 0] = 0  # U00
     sq = U[0, 0]
     sw = U[0, 0]
+
+
 
     # filling in boundary values
     for i in range(N - 1):
@@ -355,10 +400,13 @@ def Run(OnlyPaint = False):
     ax1 = plt.subplot(1, 3, 1, projection='3d')
     ax1.plot_surface(X, Y, O, cmap=ColorMap)
     ax2 = plt.subplot(1, 3, 2, projection='3d')
+    ax2.view_init(elev = Elev, azim=Azim)
+    ax1.view_init(elev = Elev, azim=Azim)
     ax2.plot_surface(X, Y, Z, cmap=ColorMap)
     if len(U) > 1:
         ax3 = plt.subplot(1, 3, 3, projection='3d')
         ax3.plot_surface(X, Y, U, cmap=ColorMap)
+        ax3.view_init(elev = Elev, azim=Azim)
     else:
         if ForceBuild.get() == 1:
             Run()
@@ -367,7 +415,7 @@ def Run(OnlyPaint = False):
     Tools.mainloop()
 
 
-Tools.title("DATASURFACE")
+Tools.title("DATASURFACE TOOLBOX")
 Tools.geometry("300x350")
 Tools.resizable(width=True, height=True)
 moreButton.config(command=AddError)
@@ -377,16 +425,19 @@ colorChangeButton.config(command=NextColorPaint)
 colorResetButton.config(command=ResetColor)
 errorEntry.bind("<Return>", errorEntryValueChanged)
 
-errorEntry.pack()
-retryButton.pack()
-colorChangeButton.pack()
-colorResetButton.pack()
-postProcessingButton.pack()
-randomButton.pack()
-forceBuildButton.pack()
-moreButton.pack()
-lessButton.pack()
-recoveryRatioLabel.pack()
+# errlvlLabel.pack(side="left")
+# errorEntry.pack(side="right")
+# retryButton.pack(side="left")
+# colorChangeButton.pack()
+# colorResetButton.pack()
+# postProcessingButton.pack()
+# randomButton.pack()
+# forceBuildButton.pack()
+# moreButton.pack()
+# lessButton.pack()
+# randNoiseButton.pack() # side="left"
+
+# recoveryRatioLabel.pack()
 
 errorEntry.delete(0, tk.END)
 errorEntry.insert(0, error)
